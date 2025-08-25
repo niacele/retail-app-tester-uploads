@@ -16,6 +16,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<TableStorageService>(); //tables
 builder.Services.AddScoped<QueueStorageService>(); //queues
 builder.Services.AddScoped<FileShareService>(); //fileshare
+builder.Services.AddScoped<BlobStorageService>(); //blobs
 
 var app = builder.Build();
 

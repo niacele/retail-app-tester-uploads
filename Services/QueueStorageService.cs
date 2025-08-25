@@ -8,36 +8,103 @@ namespace retail_app_tester.Services
 {
     public class QueueStorageService
     {
-        private readonly QueueClient _queueClient;
+        private readonly QueueClient _ordersQueueClient;
+        private readonly QueueClient _customersQueueClient;
+        private readonly QueueClient _productsQueueClient;
+
+        private readonly string _connectionString;
+
 
         public QueueStorageService(IConfiguration config)
         {
-            var connectionString = config.GetConnectionString("AzureStorage");
-            _queueClient = new QueueClient(connectionString, "orders-queue");
+            _connectionString = config.GetConnectionString("AzureStorage");
+
+            _ordersQueueClient = new QueueClient(_connectionString, "orders-queue");
+            _customersQueueClient = new QueueClient(_connectionString, "customers-queue");
+            _productsQueueClient = new QueueClient(_connectionString, "products-queue");
 
             // Create the queue if it doesn't exist
-            _queueClient.CreateIfNotExistsAsync().Wait();
+            _ordersQueueClient.CreateIfNotExistsAsync().Wait();
+            _customersQueueClient.CreateIfNotExistsAsync().Wait();
+            _productsQueueClient.CreateIfNotExistsAsync().Wait();
         }
 
+        // Order Queue Methods
         public async Task SendOrderNotificationAsync(string orderId, string message)
         {
             try
             {
-                string fullMessage = $"Order #{orderId} - {message}";
-                await _queueClient.SendMessageAsync(fullMessage);
+                string fullMessage = $"ORDER #{orderId} - {message}";
+                await _ordersQueueClient.SendMessageAsync(fullMessage);
             }
             catch (Exception ex)
             {
-                // Log the error but don't throw - we don't want queue failures to break the order process
-                Console.WriteLine($"Error sending queue message: {ex.Message}");
+                Console.WriteLine($"Error sending order queue message: {ex.Message}");
             }
         }
 
-        public async Task<string> PeekNextMessageAsync()
+        // Customer Queue Methods
+        public async Task SendCustomerNotificationAsync(string customerId, string message)
         {
             try
             {
-                PeekedMessage[] messages = await _queueClient.PeekMessagesAsync(maxMessages: 1);
+                string fullMessage = $"CUSTOMER #{customerId} - {message}";
+                await _customersQueueClient.SendMessageAsync(fullMessage);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending customer queue message: {ex.Message}");
+            }
+        }
+
+        // Product Queue Methods
+        public async Task SendProductNotificationAsync(string productId, string message)
+        {
+            try
+            {
+                string fullMessage = $"PRODUCT #{productId} - {message}";
+                await _productsQueueClient.SendMessageAsync(fullMessage);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending product queue message: {ex.Message}");
+            }
+        }
+
+        public async Task SendLowStockAlertAsync(string productId, string productName, int currentStock, int lowStockThreshold)
+        {
+            try
+            {
+                string message = $"LOW STOCK ALERT: {productName} (ID: {productId}) - Current: {currentStock}, Threshold: {lowStockThreshold}";
+                await _productsQueueClient.SendMessageAsync(message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending low stock alert: {ex.Message}");
+            }
+        }
+
+        // Generic methods for each queue
+        public async Task<string> PeekNextOrderMessageAsync()
+        {
+            return await PeekNextMessageAsync(_ordersQueueClient);
+        }
+
+        public async Task<string> PeekNextCustomerMessageAsync()
+        {
+            return await PeekNextMessageAsync(_customersQueueClient);
+        }
+
+        public async Task<string> PeekNextProductMessageAsync()
+        {
+            return await PeekNextMessageAsync(_productsQueueClient);
+        }
+
+        private async Task<string> PeekNextMessageAsync(QueueClient queueClient)
+        {
+            try
+            {
+                PeekedMessage[] messages = await queueClient.PeekMessagesAsync(maxMessages: 1);
                 if (messages.Length > 0)
                 {
                     return messages[0].MessageText;
@@ -51,31 +118,32 @@ namespace retail_app_tester.Services
             }
         }
 
-        public async Task<int> GetMessageCountAsync()
+        public async Task<int> GetOrderMessageCountAsync()
+        {
+            return await GetMessageCountAsync(_ordersQueueClient);
+        }
+
+        public async Task<int> GetCustomerMessageCountAsync()
+        {
+            return await GetMessageCountAsync(_customersQueueClient);
+        }
+
+        public async Task<int> GetProductMessageCountAsync()
+        {
+            return await GetMessageCountAsync(_productsQueueClient);
+        }
+
+        private async Task<int> GetMessageCountAsync(QueueClient queueClient)
         {
             try
             {
-                QueueProperties properties = await _queueClient.GetPropertiesAsync();
+                QueueProperties properties = await queueClient.GetPropertiesAsync();
                 return properties.ApproximateMessagesCount;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting queue properties: {ex.Message}");
                 return -1;
-            }
-        }
-
-        public async Task<bool> DeleteMessageAsync(string messageId, string popReceipt)
-        {
-            try
-            {
-                await _queueClient.DeleteMessageAsync(messageId, popReceipt);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error deleting queue message: {ex.Message}");
-                return false;
             }
         }
     }

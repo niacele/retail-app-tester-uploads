@@ -65,8 +65,8 @@ namespace retail_app_tester.Controllers
                 await _tableStorageService.AddCustomerAsync(customer);
                 if (_queueStorageService != null)
                 {
-                    await _queueStorageService.SendOrderNotificationAsync(customer.RowKey,
-                        $"New customer registered: {customer.CustomerName} ({customer.CustomerEmail})");
+                    await _queueStorageService.SendCustomerNotificationAsync(customer.RowKey,
+                 $"New customer registered: {customer.CustomerName} ({customer.CustomerEmail}) | Phone: {customer.PhoneNumber}");
                 }
 
                 return RedirectToAction(nameof(Index));

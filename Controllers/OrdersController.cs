@@ -236,63 +236,40 @@ namespace retail_app_tester.Controllers
                 return RedirectToAction("Index");
             }
 
-            Console.WriteLine($"DEBUG: Found order - Current CustomerRowKey: {order.CustomerRowKey}");
+            // ✅ Set BOTH properties FIRST
+            order.CustomerRowKey = CustomerRowKey;
+            order.PaymentMethod = paymentMethod;
+            Console.WriteLine($"DEBUG: Set CustomerRowKey to: {order.CustomerRowKey}, PaymentMethod to: {order.PaymentMethod}");
 
-            // Handle credit payment requirement - ONLY if payment method is Credit
-            if (paymentMethod == "Credit")
+            // Handle credit payment requirement
+            if (order.PaymentMethod == "Credit")
             {
+                Console.WriteLine("DEBUG: Credit payment detected, checking for contract file...");
                 if (contractFile == null || contractFile.Length == 0)
                 {
                     Console.WriteLine("DEBUG: Credit payment selected but no contract file provided");
                     ModelState.AddModelError("", "Contract file is required for credit payments");
-
-                    // Reload everything for the view
-                    await PopulateCustomerDropdown(order.CustomerRowKey);
-                    var orderItems = await _tableStorageService.GetOrderItemsAsync(orderId);
-                    ViewBag.OrderItems = orderItems;
-
-                    return View("Edit", order);
-                }
-
-                // Validate file type and size for credit payments
-                var allowedExtensions = new[] { ".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png" };
-                var fileExtension = Path.GetExtension(contractFile.FileName).ToLower();
-
-                if (!allowedExtensions.Contains(fileExtension))
-                {
-                    ModelState.AddModelError("", "Invalid file type. Please upload PDF, Word, or image files.");
                     await PopulateCustomerDropdown(order.CustomerRowKey);
                     var orderItems = await _tableStorageService.GetOrderItemsAsync(orderId);
                     ViewBag.OrderItems = orderItems;
                     return View("Edit", order);
                 }
 
-                if (contractFile.Length > 5 * 1024 * 1024) // 5MB limit
-                {
-                    ModelState.AddModelError("", "File size too large. Maximum size is 5MB.");
-                    await PopulateCustomerDropdown(order.CustomerRowKey);
-                    var orderItems = await _tableStorageService.GetOrderItemsAsync(orderId);
-                    ViewBag.OrderItems = orderItems;
-                    return View("Edit", order);
-                }
+                Console.WriteLine($"DEBUG: Contract file found: {contractFile.FileName}, Size: {contractFile.Length} bytes");
             }
 
-            // ✅ Update the order with the selected customer
-            order.CustomerRowKey = CustomerRowKey;
-            Console.WriteLine($"DEBUG: Set CustomerRowKey to: {order.CustomerRowKey}");
-
             // Upload contract if provided AND payment method is Credit
-            if (paymentMethod == "Credit" && contractFile != null && contractFile.Length > 0)
+            if (order.PaymentMethod == "Credit" && contractFile != null && contractFile.Length > 0)
             {
                 try
                 {
-                    Console.WriteLine("DEBUG: Uploading contract file...");
+                    Console.WriteLine("DEBUG: Attempting to upload contract file...");
                     using var stream = contractFile.OpenReadStream();
                     var contractFileName = await _fileShareService.UploadContractAsync(
                         order.CustomerRowKey, orderId, stream, contractFile.FileName);
 
                     order.ContractFileName = contractFileName;
-                    Console.WriteLine($"DEBUG: Contract uploaded - FileName: {order.ContractFileName}");
+                    Console.WriteLine($"DEBUG: Contract uploaded successfully - FileName: {order.ContractFileName}");
                 }
                 catch (Exception ex)
                 {
@@ -305,8 +282,35 @@ namespace retail_app_tester.Controllers
                 }
             }
 
+
+            // ✅ NEW: REDUCE STOCK QUANTITIES FOR EACH PRODUCT IN THE ORDER
+            try
+            {
+                var orderItems = await _tableStorageService.GetOrderItemsAsync(orderId);
+                foreach (var item in orderItems)
+                {
+                    Console.WriteLine($"DEBUG: Reducing stock for {item.ProductName} by {item.Quantity}");
+                    await _tableStorageService.UpdateProductStockAsync(item.ProductRowKey, item.Quantity);
+
+                    // Check if stock is now low and send alert if needed
+                    var product = await _tableStorageService.GetProductAsync("PRODUCT", item.ProductRowKey);
+                    if (product != null && product.StockQuantity <= product.LowStockThreshold)
+                    {
+                        await _queueStorageService.SendLowStockAlertAsync(
+                            product.RowKey,
+                            product.ProductName,
+                            product.StockQuantity,
+                            product.LowStockThreshold);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"DEBUG: Error updating product stock: {ex.Message}");
+                // Don't fail the order if stock update fails, but log it
+            }
+
             // Set final order details
-            order.PaymentMethod = paymentMethod;
             order.TrackingNumber = GenerateTrackingNumber();
             order.EstimatedDeliveryDate = GenerateEstimatedDeliveryDate(order.OrderDate);
 

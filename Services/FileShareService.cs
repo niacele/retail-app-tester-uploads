@@ -25,27 +25,34 @@ namespace retail_app_tester.Services
         {
             try
             {
-                // Create directory structure: customerId/orders/
-                string directoryPath = $"{customerId}/orders";
-                var directoryClient = _shareClient.GetDirectoryClient(directoryPath);
-                await directoryClient.CreateIfNotExistsAsync();
+                Console.WriteLine($"DEBUG: Starting contract upload for customer: {customerId}, order: {orderId}");
 
-                // Generate unique filename: orderId_originalFileName
+                // Follow the QuickStart pattern: Create directory structure
+                string dirName = $"{customerId}-orders"; // Simple directory name
+
+                // Get a reference to a directory and create it (like QuickStart)
+                ShareDirectoryClient directory = _shareClient.GetDirectoryClient(dirName);
+                await directory.CreateIfNotExistsAsync();
+                Console.WriteLine($"DEBUG: Directory created/verified: {dirName}");
+
+                // Generate unique filename like QuickStart but with order context
                 string fileExtension = Path.GetExtension(fileName);
-                string uniqueFileName = $"{orderId}_{DateTime.UtcNow:yyyyMMddHHmmss}{fileExtension}";
+                string uniqueFileName = $"{orderId}-contract{fileExtension}";
 
-                // Get file client and upload
-                var fileClient = directoryClient.GetFileClient(uniqueFileName);
-                await fileClient.CreateAsync(fileStream.Length);
-                await fileClient.UploadRangeAsync(
+                // Get a reference to a file and upload it (exactly like QuickStart)
+                ShareFileClient file = directory.GetFileClient(uniqueFileName);
+                await file.CreateAsync(fileStream.Length);
+                await file.UploadRangeAsync(
                     new Azure.HttpRange(0, fileStream.Length),
                     fileStream);
 
-                return uniqueFileName;
+                Console.WriteLine($"DEBUG: Successfully uploaded contract to: {dirName}/{uniqueFileName}");
+                return uniqueFileName; // Return just the filename, not full path
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error uploading contract: {ex.Message}");
+                Console.WriteLine($"ERROR uploading contract: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -54,12 +61,13 @@ namespace retail_app_tester.Services
         {
             try
             {
-                string directoryPath = $"{customerId}/orders";
-                var directoryClient = _shareClient.GetDirectoryClient(directoryPath);
+                // Follow QuickStart pattern: Reconstruct the directory path
+                string dirName = $"{customerId}-orders";
+                ShareDirectoryClient directory = _shareClient.GetDirectoryClient(dirName);
 
-                var fileClient = directoryClient.GetFileClient(fileName);
-                var response = await fileClient.DownloadAsync();
-
+                // Get file reference and download (like QuickStart but for download)
+                ShareFileClient file = directory.GetFileClient(fileName);
+                var response = await file.DownloadAsync();
                 return response.Value.Content;
             }
             catch (Exception ex)
@@ -73,12 +81,11 @@ namespace retail_app_tester.Services
         {
             try
             {
-                string directoryPath = $"{customerId}/orders";
-                var directoryClient = _shareClient.GetDirectoryClient(directoryPath);
+                string dirName = $"{customerId}-orders";
+                ShareDirectoryClient directory = _shareClient.GetDirectoryClient(dirName);
+                ShareFileClient file = directory.GetFileClient(fileName);
 
-                var fileClient = directoryClient.GetFileClient(fileName);
-                await fileClient.DeleteAsync();
-
+                await file.DeleteAsync();
                 return true;
             }
             catch (Exception ex)
@@ -93,14 +100,18 @@ namespace retail_app_tester.Services
             var contracts = new List<string>();
             try
             {
-                string directoryPath = $"{customerId}/orders";
-                var directoryClient = _shareClient.GetDirectoryClient(directoryPath);
+                string dirName = $"{customerId}-orders";
+                ShareDirectoryClient directory = _shareClient.GetDirectoryClient(dirName);
 
-                await foreach (ShareFileItem item in directoryClient.GetFilesAndDirectoriesAsync())
+                // Check if directory exists first
+                if (await directory.ExistsAsync())
                 {
-                    if (!item.IsDirectory)
+                    await foreach (ShareFileItem item in directory.GetFilesAndDirectoriesAsync())
                     {
-                        contracts.Add(item.Name);
+                        if (!item.IsDirectory)
+                        {
+                            contracts.Add(item.Name);
+                        }
                     }
                 }
             }
@@ -108,14 +119,12 @@ namespace retail_app_tester.Services
             {
                 Console.WriteLine($"Error listing contracts: {ex.Message}");
             }
-
             return contracts;
         }
 
         public string GenerateContractDownloadUrl(string customerId, string fileName)
         {
-            // This would typically use a SAS token for secure access
-            // For simplicity, we'll just return the path info
+            // This follows the pattern but would need SAS token for real implementation
             return $"/Contracts/Download/{customerId}/{fileName}";
         }
     }

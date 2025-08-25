@@ -103,8 +103,27 @@ namespace retail_app_tester.Services
             await _productsTable.UpdateEntityAsync(product, ETag.All, TableUpdateMode.Replace);
         }
 
-        // MISSING METHOD: Product Delete
-        public async Task DeleteProductAsync(string partitionKey, string rowKey)
+        public async Task UpdateProductStockAsync(string productRowKey, int quantityToDeduct)
+        {
+            var product = await GetProductAsync("PRODUCT", productRowKey);
+            if (product != null)
+            {
+                product.StockQuantity -= quantityToDeduct;
+                await UpdateProductAsync(product);
+            }
+        }
+
+        public async Task<bool> IsProductInStockAsync(string productRowKey, int requestedQuantity)
+        {
+            var product = await GetProductAsync("PRODUCT", productRowKey);
+            return product != null && product.StockQuantity >= requestedQuantity;
+        }
+
+
+
+
+// MISSING METHOD: Product Delete
+public async Task DeleteProductAsync(string partitionKey, string rowKey)
         {
             await _productsTable.DeleteEntityAsync(partitionKey, rowKey);
         }

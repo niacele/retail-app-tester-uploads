@@ -11,11 +11,13 @@ namespace retail_app_tester.Controllers
     {
         private readonly TableStorageService _tableStorageService;
         private readonly QueueStorageService _queueStorageService;
+        private readonly BlobStorageService _blobStorageService;
 
-        public ProductsController(TableStorageService tableStorageService, QueueStorageService queueStorageService)
+        public ProductsController(TableStorageService tableStorageService, QueueStorageService queueStorageService, BlobStorageService blobStorageService)
         {
             _tableStorageService = tableStorageService;
             _queueStorageService = queueStorageService;
+            _blobStorageService = blobStorageService;
         }
 
         // GET: Products
@@ -54,24 +56,56 @@ namespace retail_app_tester.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("RowKey,ProductName,Brand,ProductDescription,ProductCategory,PriceRand,PriceCents,Size,KeyIngredients,StockQuantity,LowStockThreshold,ImageURL")] Product product)
+        public async Task<IActionResult> Create([Bind("RowKey,ProductName,Brand,ProductDescription,ProductCategory,PriceRand,PriceCents,Size,KeyIngredients,StockQuantity,LowStockThreshold, ImageURL")] Product product, IFormFile productImage)
         {
             if (ModelState.IsValid)
             {
                 product.PartitionKey = "PRODUCT";
                 product.RowKey = Guid.NewGuid().ToString("N");
+
+                // Handle image upload
+                if (productImage != null && productImage.Length > 0)
+                {
+                    try
+                    {
+                        using var stream = productImage.OpenReadStream();
+                        product.ImageURL = await _blobStorageService.UploadProductImageAsync(
+                            stream, productImage.FileName, product.RowKey);
+                    }
+                    catch (Exception ex)
+                    {
+                        ModelState.AddModelError("", $"Error uploading image: {ex.Message}");
+                        return View(product);
+                    }
+                }
+                else
+                {
+                    // Set a default image or leave empty
+                    product.ImageURL = "/images/default-product.png";
+                }
+
                 await _tableStorageService.AddProductAsync(product);
+
                 if (_queueStorageService != null)
                 {
                     double price = (double)(product.PriceRand + (product.PriceCents / 100m));
-                    await _queueStorageService.SendOrderNotificationAsync(product.RowKey,
+                    await _queueStorageService.SendProductNotificationAsync(product.RowKey,
                         $"New product added: {product.ProductName} - {price:C} | Category: {product.ProductCategory} | Stock: {product.StockQuantity}");
+
+                    if (product.StockQuantity <= product.LowStockThreshold)
+                    {
+                        await _queueStorageService.SendLowStockAlertAsync(
+                            product.RowKey,
+                            product.ProductName,
+                            product.StockQuantity,
+                            product.LowStockThreshold);
+                    }
                 }
 
                 return RedirectToAction(nameof(Index));
             }
             return View(product);
-        
+
         }
 
         // GET: Products/Edit/5
@@ -95,7 +129,7 @@ namespace retail_app_tester.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, [Bind("RowKey,ProductName,Brand,ProductDescription,ProductCategory,PriceRand,PriceCents,Size,KeyIngredients,StockQuantity,LowStockThreshold,ImageURL")] Product product)
+        public async Task<IActionResult> Edit(string id, [Bind("RowKey,ProductName,Brand,ProductDescription,ProductCategory,PriceRand,PriceCents,Size,KeyIngredients,StockQuantity,LowStockThreshold, ImageURL")] Product product, IFormFile productImage)
         {
             if (id != product.RowKey)
             {
@@ -106,14 +140,41 @@ namespace retail_app_tester.Controllers
             {
                 try
                 {
-                    // Get the existing product first to preserve ETag and other Azure properties
                     var existingProduct = await _tableStorageService.GetProductAsync("PRODUCT", id);
                     if (existingProduct == null)
                     {
                         return NotFound();
                     }
 
-                    // Update only the properties that can be changed from the form
+                    // Handle new image upload
+                    if (productImage != null && productImage.Length > 0)
+                    {
+                        try
+                        {
+                            // Delete old image if it exists and isn't the default
+                            if (!string.IsNullOrEmpty(existingProduct.ImageURL) &&
+                                !existingProduct.ImageURL.Contains("default-product"))
+                            {
+                                await _blobStorageService.DeleteProductImageAsync(existingProduct.ImageURL);
+                            }
+
+                            using var stream = productImage.OpenReadStream();
+                            existingProduct.ImageURL = await _blobStorageService.UploadProductImageAsync(
+                                stream, productImage.FileName, existingProduct.RowKey);
+                        }
+                        catch (Exception ex)
+                        {
+                            ModelState.AddModelError("", $"Error uploading image: {ex.Message}");
+                            return View(product);
+                        }
+                    }
+                    else
+                    {
+                        // Preserve the existing image URL if no new image is uploaded
+                        existingProduct.ImageURL = product.ImageURL;
+                    }
+
+                    // Update other properties
                     existingProduct.ProductName = product.ProductName;
                     existingProduct.Brand = product.Brand;
                     existingProduct.ProductDescription = product.ProductDescription;
@@ -124,9 +185,18 @@ namespace retail_app_tester.Controllers
                     existingProduct.KeyIngredients = product.KeyIngredients;
                     existingProduct.StockQuantity = product.StockQuantity;
                     existingProduct.LowStockThreshold = product.LowStockThreshold;
-                    existingProduct.ImageURL = product.ImageURL;
 
                     await _tableStorageService.UpdateProductAsync(existingProduct);
+
+                    if (_queueStorageService != null && existingProduct.StockQuantity <= existingProduct.LowStockThreshold)
+                    {
+                        await _queueStorageService.SendLowStockAlertAsync(
+                            existingProduct.RowKey,
+                            existingProduct.ProductName,
+                            existingProduct.StockQuantity,
+                            existingProduct.LowStockThreshold);
+                    }
+
                     return RedirectToAction(nameof(Index));
                 }
                 catch (RequestFailedException ex) when (ex.Status == 412)
@@ -164,6 +234,17 @@ namespace retail_app_tester.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
+            var product = await _tableStorageService.GetProductAsync("PRODUCT", id);
+            if (product != null)
+            {
+                // Delete the associated image
+                if (!string.IsNullOrEmpty(product.ImageURL) &&
+                    !product.ImageURL.Contains("default-product"))
+                {
+                    await _blobStorageService.DeleteProductImageAsync(product.ImageURL);
+                }
+            }
+
             await _tableStorageService.DeleteProductAsync("PRODUCT", id);
             return RedirectToAction(nameof(Index));
         }

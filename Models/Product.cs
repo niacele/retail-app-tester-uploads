@@ -37,8 +37,6 @@ namespace retail_app_tester.Models
 
         public int LowStockThreshold { get; set; } = 10; // Default value
 
-        [Required(ErrorMessage = "Image URL is required")]
-        [Url]
         public string ImageURL { get; set; } = string.Empty;
 
         [IgnoreDataMember]

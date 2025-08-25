@@ -42,10 +42,10 @@
                             <small>@contract.FileName</small>
                         </td>
                         <td>
-                            <a href="@Url.Action("Download", "Contracts", new { customerId = contract.CustomerId, fileName = contract.FileName })"
+                            @* <a href="@Url.Action("Download", "Contracts", new { customerId = contract.CustomerId, fileName = contract.FileName })"
                                class="btn btn-sm btn-outline-primary" title="Download contract">
                                 <i class="fas fa-download"></i>
-                            </a>
+                            </a> *@
                             <a href="@Url.Action("OrderDetails", "Orders", new { id = contract.OrderId })"
                                class="btn btn-sm btn-outline-info" title="View order details">
                                 <i class="fas fa-eye"></i>

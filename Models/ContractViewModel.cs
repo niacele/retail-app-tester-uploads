@@ -12,6 +12,7 @@
         public string FileName { get; set; }
         public string ItemsSummary { get; set; }
         public int ItemCount { get; set; }
+        public bool ContractExists { get; set; }
 
     }
 }
