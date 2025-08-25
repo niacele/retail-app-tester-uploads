@@ -57,7 +57,7 @@ namespace retail_app_tester.Controllers
             contracts = contracts.OrderByDescending(c => c.UploadDate).ToList();
 
             return View(contracts);
-        }
+        } 
 
         
         
