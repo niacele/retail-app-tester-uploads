@@ -1,0 +1,224 @@
+﻿@model retail_app_tester.Models.Order
+
+@{
+    ViewData["Title"] = "Your Cart";
+
+    var orderItems = ViewBag.OrderItems as List<OrderItem> ?? new List<OrderItem>();
+    var totalItems = orderItems.Sum(i => i.Quantity);
+}
+
+<h1>Your Cart</h1>
+
+<h4>Your Order</h4>
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>Order Summary</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Order Date:</strong> @Model.OrderDate.ToString("MMMM d, yyyy")</p>
+                <p><strong>Items:</strong> @totalItems</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Subtotal:</strong> @Model.SubTotal.ToString("C")</p>
+                <p><strong>VAT (15%):</strong> @Model.VATAmount.ToString("C")</p>
+                <p><strong>Shipping:</strong> @Model.ShippingFee.ToString("C")</p>
+                <p><strong class="h5">Total: @Model.OrderTotal.ToString("C")</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Order Items -->
+<h4>Order Items</h4>
+@if (orderItems.Any())
+{
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th>Total</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in orderItems)
+            {
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@item.UnitPrice.ToString("C")</td>
+                    <td>
+                        <form asp-action="UpdateQuantity" method="post" class="form-inline">
+                            <input type="hidden" name="orderId" value="@Model.RowKey" />
+                            <input type="hidden" name="productRowKey" value="@item.ProductRowKey" />
+                            <input type="number" name="quantity" value="@item.Quantity" min="1"
+                                   class="form-control form-control-sm" style="width: 70px;" />
+                            <button type="submit" class="btn btn-sm btn-outline-primary ml-2">Update</button>
+                        </form>
+                    </td>
+                    <td>@((item.Quantity * item.UnitPrice).ToString("C"))</td>
+                    <td>
+                        <form asp-action="RemoveItem" method="post">
+                            <input type="hidden" name="orderId" value="@Model.RowKey" />
+                            <input type="hidden" name="productRowKey" value="@item.ProductRowKey" />
+                            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p class="text-muted">No items in your order yet. <a asp-controller="Products" asp-action="Index">Browse products</a></p>
+}
+
+<!-- Checkout Section (Only show if order has items) -->
+@if (orderItems.Any())
+{
+    <div class="card">
+        <div class="card-header">
+            <h4>Complete Your Order</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="CompleteOrder" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="orderId" value="@Model.RowKey" />
+
+                <!-- MOVE THE CUSTOMER SELECTION INSIDE THE FORM -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Customer Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label for="CustomerRowKey">Select Customer *</label>
+                            @Html.DropDownList("CustomerRowKey", ViewData["CustomerRowKey"] as SelectList,
+                            "Select a customer...",
+                                                new { @class = "form-control", required = "required" })
+                        @if (ViewData.ModelState["CustomerRowKey"]?.Errors?.Count > 0)
+                            {
+                                <div class="text-danger small">
+                                    @ViewData.ModelState["CustomerRowKey"].Errors.First().ErrorMessage
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Display selected customer info if available -->
+                        @if (!string.IsNullOrEmpty(Model.CustomerRowKey) && !string.IsNullOrEmpty(Model.CustomerName))
+                        {
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6>Selected Customer:</h6>
+                                <p class="mb-1"><strong>Name:</strong> @Model.CustomerName</p>
+                                <p class="mb-1"><strong>Email:</strong> @Model.CustomerEmail</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Method *</label>
+                    <select name="paymentMethod" class="form-control" required id="paymentMethodSelect">
+                        <option value="">Select Payment Method</option>
+                        <option value="Credit">Credit</option>
+                        <option value="Credit Card">Credit Card</option>
+                        <option value="PayPal">PayPal</option>
+                        <option value="EFT">Electronic Transfer</option>
+                    </select>
+                </div>
+
+                <!-- Contract upload (initially hidden) -->
+                <div id="contractUploadSection" style="display: none;">
+                    <div class="form-group">
+                        <label>Upload Contract Document (Required for Credit)</label>
+                        <input type="file" name="contractFile" class="form-control"
+                               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" />
+                        <small class="form-text text-muted">
+                            Upload PDF, Word document, or images (max 5MB)
+                        </small>
+                        @if (ViewData.ModelState["contractFile"]?.Errors?.Count > 0)
+                        {
+                            <div class="text-danger small">
+                                @ViewData.ModelState["contractFile"].Errors.First().ErrorMessage
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg" id="completeOrderBtn">
+                    Complete Order
+                </button>
+            </form>
+        </div>
+    </div>
+}
+
+<!-- Continue Shopping Button -->
+<div class="mt-3">
+    <a asp-controller="Products" asp-action="Index" class="btn btn-outline-primary">
+        Continue Shopping
+    </a>
+</div>
+
+<script>
+    document.getElementById('paymentMethodSelect').addEventListener('change', function() {
+        const contractSection = document.getElementById('contractUploadSection');
+        contractSection.style.display = this.value === 'Credit' ? 'block' : 'none';
+
+        // Make file input required only for credit
+        const fileInput = document.querySelector('input[name="contractFile"]');
+        if (fileInput) {
+            fileInput.required = this.value === 'Credit';
+        }
+    });
+
+    // Set initial state based on previous selection
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentSelect = document.getElementById('paymentMethodSelect');
+        const contractSection = document.getElementById('contractUploadSection');
+        const selectedMethod = '@ViewBag.PaymentMethod';
+
+        if (selectedMethod) {
+            paymentSelect.value = selectedMethod;
+            contractSection.style.display = selectedMethod === 'Credit' ? 'block' : 'none';
+        }
+    });
+
+    // Add this script to update customer info when selection changes
+    document.getElementById('CustomerRowKey').addEventListener('change', function() {
+        // This would ideally make an AJAX call to get customer details
+        // For now, it will just reload the page with the new selection
+        console.log('Customer selected:', this.value);
+    });
+
+    // Existing code...
+    document.getElementById('paymentMethodSelect').addEventListener('change', function() {
+        const contractSection = document.getElementById('contractUploadSection');
+        contractSection.style.display = this.value === 'Credit' ? 'block' : 'none';
+
+        const fileInput = document.querySelector('input[name="contractFile"]');
+        if (fileInput) {
+            fileInput.required = this.value === 'Credit';
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentSelect = document.getElementById('paymentMethodSelect');
+        const contractSection = document.getElementById('contractUploadSection');
+        const selectedMethod = '@ViewBag.PaymentMethod';
+
+        if (selectedMethod) {
+            paymentSelect.value = selectedMethod;
+            contractSection.style.display = selectedMethod === 'Credit' ? 'block' : 'none';
+        }
+    });
+</script>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

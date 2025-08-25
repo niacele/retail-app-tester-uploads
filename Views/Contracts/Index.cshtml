@@ -1,0 +1,67 @@
+﻿@model IEnumerable<retail_app_tester.Models.ContractViewModel>
+
+@{
+    ViewData["Title"] = "Credit Contracts";
+}
+
+<h1>Credit Applications</h1>
+<p class="text-muted">All customer contracts submitted for credit purchases.</p>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Contract List (@Model.Count() contracts)</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Order Details</th>
+                    <th>Order Total</th>
+                    <th>Date Submitted</th>
+                    <th>Contract File</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var contract in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@contract.CustomerName</strong><br>
+                            <small class="text-muted">@contract.CustomerEmail</small>
+                        </td>
+                        <td>
+                            Order #: @contract.OrderId<br>
+                            <small>@contract.OrderDate.ToString("MMM d, yyyy")</small>
+                        </td>
+                        <td>@contract.OrderTotal.ToString("C")</td>
+                        <td>@contract.UploadDate.ToString("MMM d, yyyy")</td>
+                        <td>
+                            <i class="fas fa-file-pdf text-danger"></i>
+                            <small>@contract.FileName</small>
+                        </td>
+                        <td>
+                            <a href="@Url.Action("Download", "Contracts", new { customerId = contract.CustomerId, fileName = contract.FileName })"
+                               class="btn btn-sm btn-outline-primary" title="Download contract">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            <a href="@Url.Action("OrderDetails", "Orders", new { id = contract.OrderId })"
+                               class="btn btn-sm btn-outline-info" title="View order details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info mt-4">
+        <h5>No credit applications yet</h5>
+        <p>Contracts will appear here when customers choose credit payment and upload documents.</p>
+    </div>
+}

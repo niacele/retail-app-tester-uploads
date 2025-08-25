@@ -1,0 +1,51 @@
+﻿@model IEnumerable<retail_app_tester.Models.Order>
+
+@{
+    ViewData["Title"] = "Orders";
+}
+
+<h1>Your Orders</h1>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Order Date</th>
+            <th>Total</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.RowKey</td>
+                <td>
+                    @if (!string.IsNullOrEmpty(item.CustomerRowKey) && ViewBag.CustomerNames != null)
+                    {
+                        @ViewBag.CustomerNames[item.CustomerRowKey]
+                    }
+                    else
+                    {
+                        <span class="text-muted">No customer assigned</span>
+                    }
+                </td>
+                <td>@item.OrderDate.ToString("yyyy-MM-dd")</td>
+                <td>@item.OrderTotal.ToString("C")</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.RowKey" class="btn btn-info btn-sm">Details</a>
+                    <a asp-action="OrderConfirmation" asp-route-id="@item.RowKey" class="btn btn-secondary btn-sm">View Confirmation</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        <h4>No orders yet!</h4>
+        <p>You haven't placed any orders. <a asp-controller="Products" asp-action="Index">Start shopping</a> to see your orders here.</p>
+    </div>
+}

@@ -1,0 +1,61 @@
+﻿@model retail_app_tester.Models.Order
+
+@{
+    ViewData["Title"] = "Order Confirmation";
+}
+
+<h2>Order Confirmed! 🎉</h2>
+
+<div class="alert alert-success">
+    <h4>Thank you for your order!</h4>
+    <p>Your order has been placed successfully.</p>
+</div>
+
+<!-- Customer Information -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>Customer Information</h4>
+    </div>
+    <div class="card-body">
+        @if (!string.IsNullOrEmpty(ViewBag.CustomerName))
+        {
+            <p><strong>Customer:</strong> @ViewBag.CustomerName</p>
+        }
+        @if (!string.IsNullOrEmpty(ViewBag.CustomerEmail))
+        {
+            <p><strong>Email:</strong> @ViewBag.CustomerEmail</p>
+        }
+        @if (!string.IsNullOrEmpty(ViewBag.CustomerAddress))
+        {
+            <p><strong>Shipping Address:</strong><br>@ViewBag.CustomerAddress</p>
+        }
+    </div>
+</div>
+
+<!-- Order Summary -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h4>Order Summary</h4>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Order Number:</strong> @Model.RowKey</p>
+                <p><strong>Order Date:</strong> @Model.OrderDate.ToString("MMMM d, yyyy")</p>
+                <p><strong>Tracking Number:</strong> @Model.TrackingNumber</p>
+                <p><strong>Estimated Delivery:</strong> @Model.EstimatedDeliveryDate?.ToString("MMMM d, yyyy")</p>
+                <p><strong>Payment Method:</strong> @Model.PaymentMethod</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Subtotal:</strong> @Model.SubTotal.ToString("C")</p>
+                <p><strong>VAT (15%):</strong> @Model.VATAmount.ToString("C")</p>
+                <p><strong>Shipping:</strong> @Model.ShippingFee.ToString("C")</p>
+                <p><strong class="h5">Total: @Model.OrderTotal.ToString("C")</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<a asp-controller="Products" asp-action="Index" class="btn btn-primary mt-3">
+    Continue Shopping
+</a>

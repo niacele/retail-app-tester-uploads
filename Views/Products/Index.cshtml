@@ -1,0 +1,169 @@
+﻿@model IEnumerable<retail_app_tester.Models.Product>
+
+@{
+    ViewData["Title"] = "Products";
+}
+
+<h1>Products</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-success">+ Add New Product</a>
+</p>
+
+<table class="table table-striped">
+    <thead class="table-primary">
+        <tr>
+            <th>Product Info</th>
+            <th>Category</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Image</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    <strong>@item.ProductName</strong><br>
+                    <small class="text-muted">@item.Brand</small><br>
+                    <small>@item.Size</small>
+                </td>
+                <td>@item.ProductCategory</td>
+                <td>
+                    <strong>R @item.PriceRand,@(item.PriceCents.ToString("00"))</strong>
+                </td>
+                <td>
+                    <span class="@(item.StockQuantity > 0 ? "text-success" : "text-danger")">
+                        @item.StockQuantity
+                    </span>
+                    @if (item.StockQuantity <= item.LowStockThreshold && item.StockQuantity > 0)
+                    {
+                        <br>
+                
+                        <small class="text-warning">Low Stock</small>
+                    }
+                </td>
+                <td>
+                    @if (!string.IsNullOrEmpty(item.ImageURL))
+                    {
+                        <img src="@item.ImageURL" width="50" height="50" class="img-thumbnail" />
+                    }
+                    else
+                    {
+                        <span class="text-muted">No Image</span>
+                    }
+                </td>
+                <td>
+                    <div class="btn-group-vertical btn-group-sm" role="group">
+                        <form asp-controller="Orders" asp-action="AddProductToOrder" method="post">
+                            <input type="hidden" name="productRowKey" value="@item.RowKey" />
+                            <input type="hidden" name="quantity" value="1" />
+                            <button type="submit" class="btn btn-success btn-sm"
+                                    title="Add to Order" @(item.StockQuantity == 0 ? "disabled" : "")>
+                                + Add
+                            </button>
+                        </form>
+
+                        <a asp-action="Edit" asp-route-id="@item.RowKey" class="btn btn-secondary btn-sm">Edit</a>
+                        <a asp-action="Details" asp-route-id="@item.RowKey" class="btn btn-info btn-sm">Details</a>
+                        <a asp-action="Delete" asp-route-id="@item.RowKey" class="btn btn-danger btn-sm">Delete</a>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@* <table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.ProductName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Brand)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ProductDescription)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ProductCategory)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ProductPrice)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Size)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.KeyIngredients)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.StockQuantity)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.LowStockThreshold)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.ImageURL)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ProductName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Brand)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ProductDescription)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ProductCategory)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ProductPrice)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Size)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.KeyIngredients)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.StockQuantity)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.LowStockThreshold)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ImageURL)
+                </td>
+                <td>
+                    <div class="btn-group-vertical btn-group-sm" role="group">
+                        <form asp-controller="Orders" asp-action="AddProductToOrder" method="post">
+                            <input type="hidden" name="productRowKey" value="@item.RowKey" />
+                            <input type="hidden" name="quantity" value="1" />
+                            <button type="submit" class="btn btn-success btn-sm"
+                                    title="Add to Order" @(item.StockQuantity == 0 ? "disabled" : "")>
+                                + Add to Order
+                            </button>
+                        </form>
+
+                        <a asp-action="Edit" asp-route-id="@item.RowKey" class="btn btn-secondary btn-sm">Edit</a>
+                        <a asp-action="Details" asp-route-id="@item.RowKey" class="btn btn-info btn-sm">Details</a>
+                        <a asp-action="Delete" asp-route-id="@item.RowKey" class="btn btn-danger btn-sm">Delete</a>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+ *@
