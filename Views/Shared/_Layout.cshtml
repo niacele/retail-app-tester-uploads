@@ -1,58 +1,229 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - retail_app_tester</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/retail_app_tester.styles.css" asp-append-version="true" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkinShelf Skincare</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --dark-brown: #433831;
+            --medium-brown: #5b4f47;
+            --light-brown: #745e4d;
+            --terracotta: #a16745;
+            --beige: #bd9479;
+            --off-white: #f8f7f4;
+            --card-shadow: 0 8px 20px rgba(67, 56, 49, 0.12);
+        }
+
+        body {
+            background-color: #fafaf8;
+            color: var(--dark-brown);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Header Styles */
+        .navbar {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 10px 0;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--terracotta) !important;
+            font-size: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--dark-brown) !important;
+            font-weight: 500;
+            margin: 0 5px;
+            transition: color 0.3s;
+            padding: 8px 15px !important;
+            border-radius: 20px;
+        }
+
+            .nav-link:hover, .nav-link.active {
+                background-color: var(--terracotta);
+                color: white !important;
+            }
+
+        /* Hero Carousel */
+        .hero-carousel {
+            margin: 20px 0 40px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+        }
+
+        .carousel-item {
+            height: 400px;
+        }
+
+        .carousel-image {
+            object-fit: cover;
+            height: 100%;
+            width: 100%;
+        }
+
+        .carousel-caption {
+            background: rgba(67, 56, 49, 0.7);
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            margin: 40px 0;
+        }
+
+        .action-card {
+            background-color: var(--off-white);
+            border-radius: 10px;
+            padding: 30px;
+            height: 100%;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.3s;
+            text-align: center;
+        }
+
+            .action-card:hover {
+                transform: translateY(-5px);
+            }
+
+        .action-icon {
+            font-size: 2.5rem;
+            color: var(--terracotta);
+            margin-bottom: 15px;
+        }
+
+        .btn-action {
+            background-color: var(--terracotta);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            margin-top: 15px;
+            border: none;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+            .btn-action:hover {
+                background-color: var(--light-brown);
+                color: white;
+                transform: translateY(-3px);
+            }
+
+        /* Footer */
+        .footer {
+            background-color: var(--dark-brown);
+            color: var(--off-white);
+            padding: 40px 0 20px;
+            margin-top: 60px;
+        }
+
+            .footer a {
+                color: var(--beige);
+                text-decoration: none;
+                transition: color 0.3s;
+            }
+
+                .footer a:hover {
+                    color: white;
+                }
+
+        .footer-logo {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: var(--beige);
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ShopIt™</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Customers" asp-action="Index">Customer</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Products" asp-action="Index">Product</a>
-                        </li>
-                        <li class="nav-item">
-                        <a class="nav-link text-dark" asp-area="" asp-controller="Orders" asp-action="Index">Orders</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Contracts" asp-action="Index">
-                                <i class="fas fa-file-contract"></i> Credit Contracts
-                            </a>
-                        </li>
+    <!-- Navigation Header -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                <i class="fas fa-spa me-2"></i>SkinShelf Skincare
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Customers" asp-action="Index">Customers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Products" asp-action="Index">Products</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-area="" asp-controller="Orders" asp-action="Index">Orders</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Contracts" asp-action="Index">
+                            <i class="fas fa-file-contract"></i> Credit Contracts
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    @RenderBody()
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="footer-logo">
+                        <i class="fas fa-spa me-2"></i>SkinShelf Skincare
+                    </div>
+                    <p>Creating effective skincare with natural ingredients for a radiant, healthy complexion.</p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="/Home/Index">Home</a></li>
+                        <li><a href="/Customers/Index">Customers</a></li>
+                        <li><a href="/Products/Index">Products</a></li>
+                        <li><a href="/Orders/Index">Orders</a></li>
+                        <li><a href="/Contracts/Index">Credit Contracts</a></li>
                     </ul>
                 </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Contact Info</h5>
+                    <p><i class="fas fa-map-marker-alt me-2"></i> 123 Skincare Ave, Beauty District</p>
+                    <p><i class="fas fa-phone me-2"></i> (021) 456-7890</p>
+                    <p><i class="fas fa-envelope me-2"></i> info@skinshelf.com</p>
+                </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - retail_app_tester - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <hr>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <p>&copy; 2023 SkinShelf Skincare. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end mb-3">
+                    <a href="#" class="me-3"><i class="fab fa-instagram fa-lg"></i></a>
+                    <a href="#" class="me-3"><i class="fab fa-facebook fa-lg"></i></a>
+                    <a href="#" class="me-3"><i class="fab fa-twitter fa-lg"></i></a>
+                    <a href="#"><i class="fab fa-pinterest fa-lg"></i></a>
+                </div>
+            </div>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
