@@ -35,10 +35,10 @@ namespace retail_app_tester.Controllers
 
         private DateTime GenerateEstimatedDeliveryDate(DateTime orderDate)
         {
-            int daysToAdd = _random.Next(2, 6); // 2-5 days
+            int daysToAdd = _random.Next(2, 6); 
             DateTime estimatedDate = orderDate.AddDays(daysToAdd);
 
-            // Skip weekends (optional)
+            
             while (estimatedDate.DayOfWeek == DayOfWeek.Saturday ||
                    estimatedDate.DayOfWeek == DayOfWeek.Sunday)
             {
@@ -57,7 +57,7 @@ namespace retail_app_tester.Controllers
 
         private (double subtotal, double vat, double total) CalculateOrderTotals(List<OrderItem> orderItems, double shippingFee)
         {
-            const double vatRate = 0.15; // 15% VAT
+            const double vatRate = 0.15; 
             double subtotal = orderItems.Sum(item => item.Quantity * (double)item.UnitPrice);
             double vatAmount = subtotal * vatRate;
             double actualShippingFee = 200.0;
@@ -100,7 +100,6 @@ namespace retail_app_tester.Controllers
                 return NotFound();
             }
 
-            // Load customer information if available
             if (!string.IsNullOrEmpty(order.CustomerRowKey))
             {
                 var customer = await _tableStorageService.GetCustomerAsync("CUSTOMER", order.CustomerRowKey);
@@ -115,21 +114,6 @@ namespace retail_app_tester.Controllers
             return View(order);
         }
 
-        // GET: Orders/Create
-        //public async Task<IActionResult> Create()
-        //{
-        //    //var customers = _customersTable.QueryAsync<Customer>();
-        //    //ViewData["CustomerRowKey"] = new SelectList(await customers.ToListAsync(), "RowKey", "CustomerEmail");
-        //    //return View();
-
-        //    //var customers = _customersTable.QueryAsync<Customer>();
-        //    //var customerList = await ToListAsync(customers);
-        //    //ViewData["CustomerRowKey"] = new SelectList(customerList, "RowKey", "CustomerEmail");
-        //    await PopulateCustomerDropdown();
-        //    return View();
-
-        //}
-
         [HttpPost]
         public async Task<IActionResult> AddProductToOrder(string productRowKey, int quantity = 1)
         {
@@ -138,15 +122,14 @@ namespace retail_app_tester.Controllers
 
             if (string.IsNullOrEmpty(orderId))
             {
-                Console.WriteLine("DEBUG: Creating NEW order with shipping fee 200");
 
-                // Create new order
+                
                 order = new Order
                 {
                     PartitionKey = "ORDER",
                     RowKey = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
                     OrderDate = DateTime.UtcNow,
-                    ShippingFee = 200.0, // Use double literal
+                    ShippingFee = 200.0, 
                     SubTotal = 0.0,
                     VATAmount = 0.0,
                     OrderTotal = 200.0
@@ -154,40 +137,33 @@ namespace retail_app_tester.Controllers
                 await _tableStorageService.AddOrderAsync(order);
                 orderId = order.RowKey;
                 TempData["CurrentOrderId"] = orderId;
-                Console.WriteLine($"DEBUG: New order created with ID: {orderId}, ShippingFee: {order.ShippingFee}");
+                
             }
             else
             {
-                Console.WriteLine($"DEBUG: Retrieving EXISTING order: {orderId}");
-                // Get existing order
                 order = await _tableStorageService.GetOrderAsync("ORDER", orderId);
                 if (order == null)
                 {
-                    Console.WriteLine("DEBUG: Order not found, redirecting to Index");
                     return RedirectToAction("Index");
                 }
-                Console.WriteLine($"DEBUG: Retrieved order - ShippingFee: {order.ShippingFee}");
+                
             }
 
-            // Get product details
             var product = await _tableStorageService.GetProductAsync("PRODUCT", productRowKey);
             if (product == null) return RedirectToAction("Index");
 
-            // Calculate the full price from Rand and Cents
             double unitPrice = (double)(product.PriceRand + (product.PriceCents / 100m));
 
-            // Add or update order item
             var existingItem = await _tableStorageService.GetOrderItemAsync(orderId, productRowKey);
 
             if (existingItem != null)
             {
-                // Update existing item
+               
                 existingItem.Quantity += quantity;
                 await _tableStorageService.UpdateOrderItemAsync(existingItem);
             }
             else
             {
-                // Create new order item
                 var orderItem = new OrderItem
                 {
                     PartitionKey = orderId,
@@ -200,7 +176,6 @@ namespace retail_app_tester.Controllers
                 await _tableStorageService.AddOrderItemAsync(orderItem);
             }
 
-            // Update order totals
             await UpdateOrderTotals(orderId);
 
             return RedirectToAction("Edit", new { id = orderId });
@@ -227,27 +202,20 @@ namespace retail_app_tester.Controllers
         [HttpPost]
         public async Task<IActionResult> CompleteOrder(string orderId, string CustomerRowKey, string paymentMethod, IFormFile contractFile = null)
         {
-            Console.WriteLine($"DEBUG: CompleteOrder called - orderId: {orderId}, CustomerRowKey: {CustomerRowKey}, paymentMethod: {paymentMethod}");
-
             var order = await _tableStorageService.GetOrderAsync("ORDER", orderId);
             if (order == null)
             {
-                Console.WriteLine("DEBUG: Order not found");
                 return RedirectToAction("Index");
             }
 
-            // ✅ Set BOTH properties FIRST
             order.CustomerRowKey = CustomerRowKey;
             order.PaymentMethod = paymentMethod;
-            Console.WriteLine($"DEBUG: Set CustomerRowKey to: {order.CustomerRowKey}, PaymentMethod to: {order.PaymentMethod}");
 
-            // Handle credit payment requirement
+ 
             if (order.PaymentMethod == "Credit")
             {
-                Console.WriteLine("DEBUG: Credit payment detected, checking for contract file...");
                 if (contractFile == null || contractFile.Length == 0)
                 {
-                    Console.WriteLine("DEBUG: Credit payment selected but no contract file provided");
                     ModelState.AddModelError("", "Contract file is required for credit payments");
                     await PopulateCustomerDropdown(order.CustomerRowKey);
                     var orderItems = await _tableStorageService.GetOrderItemsAsync(orderId);
@@ -255,44 +223,39 @@ namespace retail_app_tester.Controllers
                     return View("Edit", order);
                 }
 
-                Console.WriteLine($"DEBUG: Contract file found: {contractFile.FileName}, Size: {contractFile.Length} bytes");
-            }
+                     }
 
-            // Upload contract if provided AND payment method is Credit
             if (order.PaymentMethod == "Credit" && contractFile != null && contractFile.Length > 0)
             {
                 try
                 {
-                    Console.WriteLine("DEBUG: Attempting to upload contract file...");
                     using var stream = contractFile.OpenReadStream();
                     var contractFileName = await _fileShareService.UploadContractAsync(
                         order.CustomerRowKey, orderId, stream, contractFile.FileName);
 
                     order.ContractFileName = contractFileName;
-                    Console.WriteLine($"DEBUG: Contract uploaded successfully - FileName: {order.ContractFileName}");
+                    
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"DEBUG: Contract upload failed: {ex.Message}");
                     ModelState.AddModelError("", $"Error uploading contract: {ex.Message}");
+
                     await PopulateCustomerDropdown(order.CustomerRowKey);
                     var orderItems = await _tableStorageService.GetOrderItemsAsync(orderId);
+
                     ViewBag.OrderItems = orderItems;
                     return View("Edit", order);
                 }
             }
 
 
-            // ✅ NEW: REDUCE STOCK QUANTITIES FOR EACH PRODUCT IN THE ORDER
             try
             {
                 var orderItems = await _tableStorageService.GetOrderItemsAsync(orderId);
                 foreach (var item in orderItems)
                 {
-                    Console.WriteLine($"DEBUG: Reducing stock for {item.ProductName} by {item.Quantity}");
                     await _tableStorageService.UpdateProductStockAsync(item.ProductRowKey, item.Quantity);
 
-                    // Check if stock is now low and send alert if needed
                     var product = await _tableStorageService.GetProductAsync("PRODUCT", item.ProductRowKey);
                     if (product != null && product.StockQuantity <= product.LowStockThreshold)
                     {
@@ -306,23 +269,15 @@ namespace retail_app_tester.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"DEBUG: Error updating product stock: {ex.Message}");
-                // Don't fail the order if stock update fails, but log it
+
             }
 
-            // Set final order details
             order.TrackingNumber = GenerateTrackingNumber();
             order.EstimatedDeliveryDate = GenerateEstimatedDeliveryDate(order.OrderDate);
 
-            Console.WriteLine($"DEBUG: Saving order with - PaymentMethod: {order.PaymentMethod}, ContractFileName: {order.ContractFileName}");
-
-            // ✅ Save the updated order
             await _tableStorageService.UpdateOrderAsync(order);
             TempData.Remove("CurrentOrderId");
 
-            Console.WriteLine("DEBUG: Order saved successfully");
-
-            // Send queue notification
             if (_queueStorageService != null)
             {
                 await _queueStorageService.SendOrderNotificationAsync(orderId,
@@ -340,13 +295,11 @@ namespace retail_app_tester.Controllers
                 var orderItems = await _tableStorageService.GetOrderItemsAsync(id);
                 ViewBag.OrderItems = orderItems;
 
-                // Load customer information if available
                 if (!string.IsNullOrEmpty(order.CustomerRowKey))
                 {
                     var customer = await _tableStorageService.GetCustomerAsync("CUSTOMER", order.CustomerRowKey);
                     if (customer != null)
                     {
-                        // Create a view model or use ViewBag to pass customer info
                         ViewBag.CustomerName = customer.CustomerName;
                         ViewBag.CustomerEmail = customer.CustomerEmail;
                         ViewBag.CustomerAddress = customer.ShippingAddress;
@@ -364,7 +317,6 @@ namespace retail_app_tester.Controllers
             var order = await _tableStorageService.GetOrderAsync("ORDER", id);
             if (order == null) return NotFound();
 
-            // Load customer information if available
             if (!string.IsNullOrEmpty(order.CustomerRowKey))
             {
                 var customer = await _tableStorageService.GetCustomerAsync("CUSTOMER", order.CustomerRowKey);
@@ -396,8 +348,8 @@ namespace retail_app_tester.Controllers
                     var existingOrder = await _tableStorageService.GetOrderAsync("ORDER", id);
                     if (existingOrder == null) return NotFound();
 
-                    // Only update allowed fields
                     existingOrder.CustomerRowKey = order.CustomerRowKey;
+
                     existingOrder.PaymentMethod = order.PaymentMethod;
 
                     await _tableStorageService.UpdateOrderAsync(existingOrder);
@@ -429,9 +381,8 @@ namespace retail_app_tester.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(string id)
         {
-            // Delete all order items first
     await _tableStorageService.DeleteAllOrderItemsAsync(id);
-            // Then delete the order
+
             await _tableStorageService.DeleteOrderAsync("ORDER", id);
             return RedirectToAction(nameof(Index));
         }
@@ -460,49 +411,6 @@ namespace retail_app_tester.Controllers
 
             return RedirectToAction("Edit", new { id = orderId });
         }
-
-
-
-
-
-        // POST: Orders/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Create([Bind("CustomerRowKey,OrderDate,ShippingFee")] Order order)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        order.PartitionKey = "ORDER";
-        //        order.RowKey = Guid.NewGuid().ToString("N");
-        //        order.EstimatedDeliveryDate = GenerateEstimatedDeliveryDate(order.OrderDate);
-        //        order.TrackingNumber = GenerateTrackingNumber();
-
-        //        order.SubTotal = 0;
-        //        order.VATAmount = 0;
-        //        order.OrderTotal = order.ShippingFee;
-
-        //        await _ordersTable.AddEntityAsync(order);
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //    //var customers = _customersTable.QueryAsync<Customer>();
-        //    //var customerList = await ToListAsync(customers);
-        //    //ViewData["CustomerRowKey"] = new SelectList(customerList, "RowKey", "CustomerEmail");
-        //    await PopulateCustomerDropdown();
-        //    return View(order);
-
-        //    //var customers = _customersTable.QueryAsync<Customer>();
-        //    //ViewData["CustomerRowKey"] = new SelectList(await customers.ToListAsync(), "RowKey", "CustomerEmail", order.CustomerRowKey); return View(order);
-        //}
-
-        // GET: Orders/Edit/5
-
-
-        // POST: Orders/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-
 
 
 

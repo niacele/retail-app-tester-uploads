@@ -35,7 +35,7 @@ namespace retail_app_tester.Models
         [Range(0, int.MaxValue)]
         public int StockQuantity { get; set; }
 
-        public int LowStockThreshold { get; set; } = 10; // Default value
+        public int LowStockThreshold { get; set; } = 10; 
 
         public string ImageURL { get; set; } = string.Empty;
 

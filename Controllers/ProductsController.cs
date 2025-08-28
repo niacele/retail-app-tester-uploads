@@ -56,14 +56,13 @@ namespace retail_app_tester.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("RowKey,ProductName,Brand,ProductDescription,ProductCategory,PriceRand,PriceCents,Size,KeyIngredients,StockQuantity,LowStockThreshold, ImageURL")] Product product, IFormFile productImage)
+        public async Task<IActionResult> Create([Bind("RowKey,ProductName,Brand,ProductDescription,ProductCategory,PriceRand,PriceCents,Size,KeyIngredients,StockQuantity,LowStockThreshold")] Product product, IFormFile productImage)
         {
             if (ModelState.IsValid)
             {
                 product.PartitionKey = "PRODUCT";
                 product.RowKey = Guid.NewGuid().ToString("N");
 
-                // Handle image upload
                 if (productImage != null && productImage.Length > 0)
                 {
                     try
@@ -80,8 +79,7 @@ namespace retail_app_tester.Controllers
                 }
                 else
                 {
-                    // Set a default image or leave empty
-                    product.ImageURL = "/images/default-product.png";
+                    
                 }
 
                 await _tableStorageService.AddProductAsync(product);
@@ -129,7 +127,7 @@ namespace retail_app_tester.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(string id, [Bind("RowKey,ProductName,Brand,ProductDescription,ProductCategory,PriceRand,PriceCents,Size,KeyIngredients,StockQuantity,LowStockThreshold, ImageURL")] Product product, IFormFile productImage)
+        public async Task<IActionResult> Edit(string id, [Bind("RowKey,ProductName,Brand,ProductDescription,ProductCategory,PriceRand,PriceCents,Size,KeyIngredients,StockQuantity,LowStockThreshold")] Product product, IFormFile productImage)
         {
             if (id != product.RowKey)
             {
@@ -146,12 +144,10 @@ namespace retail_app_tester.Controllers
                         return NotFound();
                     }
 
-                    // Handle new image upload
                     if (productImage != null && productImage.Length > 0)
                     {
                         try
                         {
-                            // Delete old image if it exists and isn't the default
                             if (!string.IsNullOrEmpty(existingProduct.ImageURL) &&
                                 !existingProduct.ImageURL.Contains("default-product"))
                             {
@@ -170,11 +166,9 @@ namespace retail_app_tester.Controllers
                     }
                     else
                     {
-                        // Preserve the existing image URL if no new image is uploaded
                         existingProduct.ImageURL = product.ImageURL;
                     }
 
-                    // Update other properties
                     existingProduct.ProductName = product.ProductName;
                     existingProduct.Brand = product.Brand;
                     existingProduct.ProductDescription = product.ProductDescription;
@@ -237,7 +231,6 @@ namespace retail_app_tester.Controllers
             var product = await _tableStorageService.GetProductAsync("PRODUCT", id);
             if (product != null)
             {
-                // Delete the associated image
                 if (!string.IsNullOrEmpty(product.ImageURL) &&
                     !product.ImageURL.Contains("default-product"))
                 {

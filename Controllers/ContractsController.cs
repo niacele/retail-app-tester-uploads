@@ -23,17 +23,8 @@ namespace retail_app_tester.Controllers
         {
             try
             {
-                // Get all orders
                 var orders = await _tableStorageService.GetAllOrdersAsync();
 
-                // Debug: Check what orders we have
-                Console.WriteLine($"DEBUG: Found {orders.Count} total orders");
-                foreach (var order in orders)
-                {
-                    Console.WriteLine($"DEBUG: Order {order.RowKey} - ContractFileName: '{order.ContractFileName}', CustomerRowKey: '{order.CustomerRowKey}', PaymentMethod: '{order.PaymentMethod}'");
-                }
-
-                // Filter orders that should have contracts (credit payments)
                 var creditOrders = orders
                     .Where(o => o.PaymentMethod == "Credit" &&
                                !string.IsNullOrEmpty(o.CustomerRowKey))
@@ -45,15 +36,12 @@ namespace retail_app_tester.Controllers
 
                 foreach (var order in creditOrders)
                 {
-                    // Get customer details
                     var customer = await _tableStorageService.GetCustomerAsync("CUSTOMER", order.CustomerRowKey);
 
-                    // Get order items
                     var orderItems = await _tableStorageService.GetOrderItemsAsync(order.RowKey);
                     var itemSummary = string.Join(", ", orderItems.Take(3).Select(i => i.ProductName));
                     if (orderItems.Count > 3) itemSummary += "...";
 
-                    // Check if contract file actually exists in file share
                     bool contractExists = false;
                     string actualFileName = order.ContractFileName;
 
@@ -61,14 +49,11 @@ namespace retail_app_tester.Controllers
                     {
                         try
                         {
-                            // Verify the file actually exists in Azure File Share
                             var files = await _fileShareService.ListCustomerContractsAsync(order.CustomerRowKey);
                             contractExists = files.Any(f => f.StartsWith(order.RowKey + "-contract"));
 
                             if (!contractExists)
-                            {
-                                Console.WriteLine($"DEBUG: Contract file not found in file share for order {order.RowKey}");
-                                // Try to find the actual file name
+                            {  
                                 var allFiles = await _fileShareService.ListCustomerContractsAsync(order.CustomerRowKey);
                                 var matchingFile = allFiles.FirstOrDefault(f => f.Contains(order.RowKey));
                                 if (matchingFile != null)
@@ -80,7 +65,7 @@ namespace retail_app_tester.Controllers
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine($"DEBUG: Error checking file share: {ex.Message}");
+                            
                         }
                     }
 
@@ -100,16 +85,13 @@ namespace retail_app_tester.Controllers
                     });
                 }
 
-                // Sort by most recent first
                 contracts = contracts.OrderByDescending(c => c.UploadDate).ToList();
 
-                Console.WriteLine($"DEBUG: Returning {contracts.Count} contracts to view");
                 return View(contracts);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"ERROR in Contracts Index: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+
                 return View(new List<ContractViewModel>());
             }
         }

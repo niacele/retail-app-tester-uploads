@@ -4,84 +4,368 @@
     ViewData["Title"] = "Details";
 }
 
-<h1>Details</h1>
+<div class="container py-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="Index" style="color: var(--terracotta);">Products</a></li>
+            <li class="breadcrumb-item active" aria-current="page" style="color: var(--dark-brown);">@Model.ProductName</li>
+        </ol>
+    </nav>
 
-<div>
-    <h4>Product</h4>
-    <hr />
-    <dl class="row">
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ProductName)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ProductName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Brand)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Brand)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ProductDescription)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ProductDescription)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ProductCategory)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ProductCategory)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ProductPrice)
-        </dt>
-        <dd class="col-sm-10">
-            @Model.ProductPrice.ToString("C") 
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Size)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Size)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.KeyIngredients)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.KeyIngredients)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.StockQuantity)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.StockQuantity)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.LowStockThreshold)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.LowStockThreshold)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ImageURL)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ImageURL)
-        </dd>
-    </dl>
-</div>
+    <div class="row">
+        <!-- Product Image -->
+        <div class="col-lg-6 mb-4">
+            <div class="product-image-container">
+                @if (!string.IsNullOrEmpty(Model.ImageURL))
+                {
+                    <img src="@Model.ImageURL" class="product-detail-image" alt="@Model.ProductName" />
+                }
+                else
+                {
+                    <img src="https://via.placeholder.com/500x500/f8f7f4/5b4f47?text=No+Image" class="product-detail-image" alt="No image available" />
+                }
+                @if (Model.StockQuantity > 0)
+                {
+                    <span class="stock-badge-detail bg-success">In Stock</span>
+                }
+                else
+                {
+                    <span class="stock-badge-detail bg-danger">Out of Stock</span>
+                }
+            </div>
+        </div>
 
-<form asp-controller="Orders" asp-action="AddProductToOrder" method="post">
-    <input type="hidden" name="productRowKey" value="@Model.RowKey" />
-    <div class="input-group" style="max-width: 200px;">
-        <input type="number" name="quantity" value="1" min="1" class="form-control" />
-        <button type="submit" class="btn btn-primary">Add to Order</button>
+        <!-- Product Details -->
+        <div class="col-lg-6">
+            <div class="product-detail-card">
+                <!-- Brand and Name -->
+                <div class="product-brand-detail">@Model.Brand</div>
+                <h1 class="product-name-detail">@Model.ProductName</h1>
+
+                <!-- Price -->
+                <div class="product-price-detail">R @Model.PriceRand,@(Model.PriceCents.ToString("00"))</div>
+
+                <!-- Size -->
+                <div class="product-size-detail mb-4">
+                    <i class="fas fa-weight me-2" style="color: var(--terracotta);"></i>
+                    Size: @Model.Size
+                </div>
+
+
+
+                <!-- Add to Cart Form -->
+                <form asp-controller="Orders" asp-action="AddProductToOrder" method="post" class="mb-4">
+                    <input type="hidden" name="productRowKey" value="@Model.RowKey" />
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <label class="form-label fw-semibold" style="color: var(--dark-brown);">Quantity:</label>
+                        </div>
+                        <div class="col-auto">
+                            <div class="input-group" style="max-width: 120px;">
+                                <input type="number" name="quantity" value="1" min="1" max="@Model.StockQuantity"
+                                       class="form-control quantity-input" @(Model.StockQuantity == 0 ? "disabled" : "") />
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-add-to-cart-detail" @(Model.StockQuantity == 0 ? "disabled" : "")>
+                                <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Stock Information -->
+                <div class="stock-info mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-cubes me-2" style="color: var(--terracotta);"></i>
+                        <span class="fw-semibold" style="color: var(--dark-brown);">
+                            @if (Model.StockQuantity > 0)
+                            {
+                                <text>@Model.StockQuantity items in stock</text>
+                            }
+                            else
+                            {
+                                <text>Currently out of stock</text>
+                            }
+                        </span>
+                    </div>
+                    @if (Model.StockQuantity <= Model.LowStockThreshold && Model.StockQuantity > 0)
+                    {
+                        <div class="text-warning small mt-1">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Low stock warning
+                        </div>
+                    }
+                </div>
+
+                <!-- Category -->
+                <div class="product-category mb-4">
+                    <span class="badge bg-light text-dark" style="border: 1px solid var(--beige);">
+                        <i class="fas fa-tag me-1" style="color: var(--terracotta);"></i>@Model.ProductCategory
+                    </span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2 mb-4">
+                    <a asp-action="Edit" asp-route-id="@Model.RowKey" class="btn btn-edit-product">
+                        <i class="fas fa-edit me-2"></i>Edit Product
+                    </a>
+                    <a asp-action="Delete" asp-route-id="@Model.RowKey" class="btn btn-delete-product">
+                        <i class="fas fa-delete me-2"></i>Delete Product
+                    </a>
+                    <a asp-action="Index" class="btn btn-back-to-list">
+                        <i class="fas fa-arrow-left me-2"></i>Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
-</form>
 
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.RowKey">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <!-- Additional Information -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="product-info-tabs">
+                <ul class="nav nav-tabs" id="productTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="description-tab" data-bs-toggle="tab"
+                                data-bs-target="#description" type="button" role="tab" aria-controls="description"
+                                aria-selected="true" style="color: var(--dark-brown);">
+                            <i class="fas fa-file-alt me-2"></i>Description
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="ingredients-tab" data-bs-toggle="tab"
+                                data-bs-target="#ingredients" type="button" role="tab" aria-controls="ingredients"
+                                aria-selected="false" style="color: var(--dark-brown);">
+                            <i class="fas fa-flask me-2"></i>Ingredients
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="details-tab" data-bs-toggle="tab"
+                                data-bs-target="#details" type="button" role="tab" aria-controls="details"
+                                aria-selected="false" style="color: var(--dark-brown);">
+                            <i class="fas fa-info-circle me-2"></i>Product Details
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content p-4 border border-top-0 rounded-bottom" style="background: white; border-color: var(--beige) !important;">
+                    <!-- Description Tab -->
+                    <div class="tab-pane fade show active" id="description" role="tabpanel" aria-labelledby="description-tab">
+                        <p class="product-description" style="color: var(--dark-brown); line-height: 1.6;">
+                            @(string.IsNullOrEmpty(Model.ProductDescription) ? "No description available." : Model.ProductDescription)
+                        </p>
+                    </div>
+
+                    <!-- Ingredients Tab -->
+                    <div class="tab-pane fade" id="ingredients" role="tabpanel" aria-labelledby="ingredients-tab">
+                        <p class="product-ingredients" style="color: var(--dark-brown); line-height: 1.6;">
+                            @(string.IsNullOrEmpty(Model.KeyIngredients) ? "No ingredient information available." : Model.KeyIngredients)
+                        </p>
+                    </div>
+
+                    <!-- Details Tab -->
+                    <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-item mb-3">
+                                    <strong style="color: var(--dark-brown);">Brand:</strong>
+                                    <span style="color: var(--medium-brown);">@Model.Brand</span>
+                                </div>
+                                <div class="detail-item mb-3">
+                                    <strong style="color: var(--dark-brown);">Category:</strong>
+                                    <span style="color: var(--medium-brown);">@Model.ProductCategory</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-item mb-3">
+                                    <strong style="color: var(--dark-brown);">Size:</strong>
+                                    <span style="color: var(--medium-brown);">@Model.Size</span>
+                                </div>
+                                <div class="detail-item mb-3">
+                                    <strong style="color: var(--dark-brown);">Stock Level:</strong>
+                                    <span style="color: var(--medium-brown);">@Model.StockQuantity units</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    /* Product Detail Styles */
+    .product-detail-card {
+        background: white;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+    }
+
+    .product-image-container {
+        position: relative;
+        background-color: var(--off-white);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+    }
+
+    .product-detail-image {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+    }
+
+    .stock-badge-detail {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 0.8rem;
+        padding: 6px 12px;
+        border-radius: 20px;
+        z-index: 1;
+    }
+
+    .product-brand-detail {
+        color: var(--terracotta);
+        font-weight: 600;
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+
+    .product-name-detail {
+        font-weight: 800;
+        color: var(--dark-brown);
+        font-size: 2rem;
+        line-height: 1.2;
+        margin-bottom: 1rem;
+    }
+
+    .product-price-detail {
+        font-weight: 800;
+        color: var(--terracotta);
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .product-size-detail {
+        color: var(--medium-brown);
+        font-size: 1rem;
+    }
+
+    .quantity-input {
+        border-radius: 8px;
+        border: 1px solid var(--beige);
+        text-align: center;
+    }
+
+    .btn-add-to-cart-detail {
+        background-color: var(--terracotta);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-add-to-cart-detail:hover {
+            background-color: var(--light-brown);
+            transform: translateY(-2px);
+        }
+
+        .btn-add-to-cart-detail:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+    .btn-edit-product {
+        background-color: var(--beige);
+        color: var(--dark-brown);
+        font-weight: 600;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--beige);
+    }
+
+        .btn-edit-product:hover {
+            background-color: var(--light-brown);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-back-to-list {
+        background-color: transparent;
+        color: var(--dark-brown);
+        font-weight: 600;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--beige);
+    }
+
+        .btn-back-to-list:hover {
+            background-color: var(--beige);
+            transform: translateY(-2px);
+        }
+
+    .product-info-tabs .nav-tabs .nav-link {
+        color: var(--dark-brown);
+        border: none;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+    }
+
+        .product-info-tabs .nav-tabs .nav-link.active {
+            background-color: white;
+            color: var(--terracotta);
+            border-bottom: 3px solid var(--terracotta);
+        }
+
+        .product-info-tabs .nav-tabs .nav-link:hover {
+            color: var(--terracotta);
+        }
+
+    .detail-item {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--beige);
+    }
+
+    .breadcrumb {
+        background-color: transparent;
+        padding: 0;
+    }
+
+    .breadcrumb-item.active {
+        color: var(--dark-brown);
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Initialize Bootstrap tabs
+        const triggerTabList = document.querySelectorAll('#productTabs button')
+        triggerTabList.forEach(triggerEl => {
+            new bootstrap.Tab(triggerEl)
+        });
+
+        // Add smooth scrolling for tabs
+        document.querySelectorAll('.nav-tabs .nav-link').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = this.getAttribute('data-bs-target');
+                document.querySelector(target).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+}

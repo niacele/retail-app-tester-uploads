@@ -27,19 +27,15 @@ namespace retail_app_tester.Services
             {
                 Console.WriteLine($"DEBUG: Starting contract upload for customer: {customerId}, order: {orderId}");
 
-                // Follow the QuickStart pattern: Create directory structure
-                string dirName = $"{customerId}-orders"; // Simple directory name
+                string dirName = $"{customerId}-orders"; 
 
-                // Get a reference to a directory and create it (like QuickStart)
                 ShareDirectoryClient directory = _shareClient.GetDirectoryClient(dirName);
                 await directory.CreateIfNotExistsAsync();
                 Console.WriteLine($"DEBUG: Directory created/verified: {dirName}");
 
-                // Generate unique filename like QuickStart but with order context
                 string fileExtension = Path.GetExtension(fileName);
                 string uniqueFileName = $"{orderId}-contract{fileExtension}";
 
-                // Get a reference to a file and upload it (exactly like QuickStart)
                 ShareFileClient file = directory.GetFileClient(uniqueFileName);
                 await file.CreateAsync(fileStream.Length);
                 await file.UploadRangeAsync(
@@ -47,7 +43,7 @@ namespace retail_app_tester.Services
                     fileStream);
 
                 Console.WriteLine($"DEBUG: Successfully uploaded contract to: {dirName}/{uniqueFileName}");
-                return uniqueFileName; // Return just the filename, not full path
+                return uniqueFileName; 
             }
             catch (Exception ex)
             {
@@ -61,11 +57,9 @@ namespace retail_app_tester.Services
         {
             try
             {
-                // Follow QuickStart pattern: Reconstruct the directory path
                 string dirName = $"{customerId}-orders";
                 ShareDirectoryClient directory = _shareClient.GetDirectoryClient(dirName);
 
-                // Get file reference and download (like QuickStart but for download)
                 ShareFileClient file = directory.GetFileClient(fileName);
                 var response = await file.DownloadAsync();
                 return response.Value.Content;
@@ -103,7 +97,6 @@ namespace retail_app_tester.Services
                 string dirName = $"{customerId}-orders";
                 ShareDirectoryClient directory = _shareClient.GetDirectoryClient(dirName);
 
-                // Check if directory exists first
                 if (await directory.ExistsAsync())
                 {
                     await foreach (ShareFileItem item in directory.GetFilesAndDirectoriesAsync())
@@ -124,7 +117,6 @@ namespace retail_app_tester.Services
 
         public string GenerateContractDownloadUrl(string customerId, string fileName)
         {
-            // This follows the pattern but would need SAS token for real implementation
             return $"/Contracts/Download/{customerId}/{fileName}";
         }
     }

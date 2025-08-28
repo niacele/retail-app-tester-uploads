@@ -30,7 +30,6 @@
     </div>
 </div>
 
-<!-- Order Items -->
 <h4>Order Items</h4>
 @if (orderItems.Any())
 {
@@ -76,8 +75,6 @@ else
 {
     <p class="text-muted">No items in your order yet. <a asp-controller="Products" asp-action="Index">Browse products</a></p>
 }
-
-<!-- Checkout Section (Only show if order has items) -->
 @if (orderItems.Any())
 {
     <div class="card">
@@ -88,7 +85,6 @@ else
             <form asp-action="CompleteOrder" method="post" enctype="multipart/form-data">
                 <input type="hidden" name="orderId" value="@Model.RowKey" />
 
-                <!-- MOVE THE CUSTOMER SELECTION INSIDE THE FORM -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5>Customer Information</h5>
@@ -107,7 +103,6 @@ else
                             }
                         </div>
 
-                        <!-- Display selected customer info if available -->
                         @if (!string.IsNullOrEmpty(Model.CustomerRowKey) && !string.IsNullOrEmpty(Model.CustomerName))
                         {
                             <div class="mt-3 p-3 bg-light rounded">
@@ -130,7 +125,6 @@ else
                     </select>
                 </div>
 
-                <!-- Contract upload (initially hidden) -->
                 <div id="contractUploadSection" style="display: none;">
                     <div class="form-group">
                         <label>Upload Contract Document (Required for Credit)</label>
@@ -156,7 +150,6 @@ else
     </div>
 }
 
-<!-- Continue Shopping Button -->
 <div class="mt-3">
     <a asp-controller="Products" asp-action="Index" class="btn btn-outline-primary">
         Continue Shopping
@@ -168,14 +161,12 @@ else
         const contractSection = document.getElementById('contractUploadSection');
         contractSection.style.display = this.value === 'Credit' ? 'block' : 'none';
 
-        // Make file input required only for credit
         const fileInput = document.querySelector('input[name="contractFile"]');
         if (fileInput) {
             fileInput.required = this.value === 'Credit';
         }
     });
 
-    // Set initial state based on previous selection
     document.addEventListener('DOMContentLoaded', function() {
         const paymentSelect = document.getElementById('paymentMethodSelect');
         const contractSection = document.getElementById('contractUploadSection');
@@ -187,15 +178,12 @@ else
         }
     });
 
-    // Add this script to update customer info when selection changes
     document.getElementById('CustomerRowKey').addEventListener('change', function() {
-        // This would ideally make an AJAX call to get customer details
-        // For now, it will just reload the page with the new selection
+
         console.log('Customer selected:', this.value);
     });
 
-    // Existing code...
-    document.getElementById('paymentMethodSelect').addEventListener('change', function() {
+       document.getElementById('paymentMethodSelect').addEventListener('change', function() {
         const contractSection = document.getElementById('contractUploadSection');
         contractSection.style.display = this.value === 'Credit' ? 'block' : 'none';
 

@@ -24,7 +24,7 @@ namespace retail_app_tester.Services
             _ordersTable = new TableClient(connectionString, "Orders");
             _orderItemsTable = new TableClient(connectionString, "OrderItems");
 
-            // Create tables if they don't exist (optional)
+            
             _customersTable.CreateIfNotExistsAsync().Wait();
             _productsTable.CreateIfNotExistsAsync().Wait();
             _ordersTable.CreateIfNotExistsAsync().Wait();
@@ -69,7 +69,6 @@ namespace retail_app_tester.Services
             await _customersTable.DeleteEntityAsync(partitionKey, rowKey);
         }
 
-        // ========== PRODUCT METHODS ==========
         public async Task<List<Product>> GetAllProductsAsync()
         {
             var products = new List<Product>();
@@ -121,14 +120,11 @@ namespace retail_app_tester.Services
 
 
 
-
-// MISSING METHOD: Product Delete
 public async Task DeleteProductAsync(string partitionKey, string rowKey)
         {
             await _productsTable.DeleteEntityAsync(partitionKey, rowKey);
         }
 
-        // ========== ORDER METHODS ==========
         public async Task<List<Order>> GetAllOrdersAsync()
         {
             var orders = new List<Order>();
@@ -167,7 +163,6 @@ public async Task DeleteProductAsync(string partitionKey, string rowKey)
             await _ordersTable.DeleteEntityAsync(partitionKey, rowKey);
         }
 
-        // ========== QUERY METHODS ==========
         public async Task<List<Order>> GetOrdersByCustomerAsync(string customerRowKey)
         {
             var orders = new List<Order>();
@@ -190,7 +185,6 @@ public async Task DeleteProductAsync(string partitionKey, string rowKey)
             return products;
         }
 
-        // ========== HELPER METHODS ==========
         public async Task<int> GetCustomerCountAsync()
         {
             var customers = await GetAllCustomersAsync();
@@ -209,7 +203,6 @@ public async Task DeleteProductAsync(string partitionKey, string rowKey)
             return orders.Count;
         }
 
-        // ========== ORDERITEM METHODS ==========
         public async Task<List<OrderItem>> GetOrderItemsAsync(string orderId)
         {
             var items = new List<OrderItem>();

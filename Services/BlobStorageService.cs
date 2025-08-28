@@ -22,19 +22,16 @@ namespace retail_app_tester.Services
         {
             try
             {
-                // Create container if it doesn't exist
                 var containerClient = _blobServiceClient.GetBlobContainerClient("product-images");
                 await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob);
 
-                // Generate unique filename to avoid conflicts
                 string fileExtension = Path.GetExtension(fileName);
                 string uniqueFileName = $"{productId}_{Guid.NewGuid().ToString("N").Substring(0, 8)}{fileExtension}";
 
-                // Get blob client and upload
                 var blobClient = containerClient.GetBlobClient(uniqueFileName);
                 await blobClient.UploadAsync(fileStream, overwrite: true);
 
-                // Return the URL of the uploaded image
+
                 return blobClient.Uri.ToString();
             }
             catch (Exception ex)
@@ -53,7 +50,7 @@ namespace retail_app_tester.Services
 
                 var uri = new Uri(imageUrl);
                 var containerClient = _blobServiceClient.GetBlobContainerClient("product-images");
-                var blobName = uri.Segments[^1]; // Get the last segment (filename)
+                var blobName = uri.Segments[^1]; 
 
                 var blobClient = containerClient.GetBlobClient(blobName);
                 return await blobClient.DeleteIfExistsAsync();
