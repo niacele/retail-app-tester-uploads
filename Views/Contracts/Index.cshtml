@@ -35,7 +35,7 @@
                             Order #: @contract.OrderId<br>
                             <small>@contract.OrderDate.ToString("MMM d, yyyy")</small>
                         </td>
-                        <td>@contract.OrderTotal.ToString("C")</td>
+                        <td>@contract.OrderTotal.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</td>
                         <td>@contract.UploadDate.ToString("MMM d, yyyy")</td>
                         <td>
                             <i class="fas fa-file-pdf text-danger"></i>
