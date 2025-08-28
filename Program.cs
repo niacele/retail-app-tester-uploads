@@ -18,6 +18,16 @@ builder.Services.AddScoped<QueueStorageService>(); //queues
 builder.Services.AddScoped<FileShareService>(); //fileshare
 builder.Services.AddScoped<BlobStorageService>(); //blobs
 
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.Name = ".RetailApp.Session";
+});
+
+builder.Services.AddMvc().AddSessionStateTempDataProvider();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -32,6 +42,8 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapStaticAssets();
 

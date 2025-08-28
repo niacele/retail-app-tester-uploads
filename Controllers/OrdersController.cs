@@ -254,6 +254,7 @@ namespace retail_app_tester.Controllers
                 var orderItems = await _tableStorageService.GetOrderItemsAsync(orderId);
                 foreach (var item in orderItems)
                 {
+                    Console.WriteLine($"DEBUG: Reducing stock for {item.ProductName} by {item.Quantity}");
                     await _tableStorageService.UpdateProductStockAsync(item.ProductRowKey, item.Quantity);
 
                     var product = await _tableStorageService.GetProductAsync("PRODUCT", item.ProductRowKey);
@@ -411,6 +412,49 @@ namespace retail_app_tester.Controllers
 
             return RedirectToAction("Edit", new { id = orderId });
         }
+
+
+
+
+
+        // POST: Orders/Create
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Create([Bind("CustomerRowKey,OrderDate,ShippingFee")] Order order)
+        //{
+        //    if (ModelState.IsValid)
+        //    {
+        //        order.PartitionKey = "ORDER";
+        //        order.RowKey = Guid.NewGuid().ToString("N");
+        //        order.EstimatedDeliveryDate = GenerateEstimatedDeliveryDate(order.OrderDate);
+        //        order.TrackingNumber = GenerateTrackingNumber();
+
+        //        order.SubTotal = 0;
+        //        order.VATAmount = 0;
+        //        order.OrderTotal = order.ShippingFee;
+
+        //        await _ordersTable.AddEntityAsync(order);
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    //var customers = _customersTable.QueryAsync<Customer>();
+        //    //var customerList = await ToListAsync(customers);
+        //    //ViewData["CustomerRowKey"] = new SelectList(customerList, "RowKey", "CustomerEmail");
+        //    await PopulateCustomerDropdown();
+        //    return View(order);
+
+        //    //var customers = _customersTable.QueryAsync<Customer>();
+        //    //ViewData["CustomerRowKey"] = new SelectList(await customers.ToListAsync(), "RowKey", "CustomerEmail", order.CustomerRowKey); return View(order);
+        //}
+
+        // GET: Orders/Edit/5
+
+
+        // POST: Orders/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+
 
 
 
