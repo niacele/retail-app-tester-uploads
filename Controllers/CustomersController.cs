@@ -106,12 +106,28 @@ namespace retail_app_tester.Controllers
             {
                 try
                 {
-                    customer.PartitionKey = "CUSTOMER";
-                    await _tableStorageService.UpdateCustomerAsync(customer);
+                    var existingCustomer = await _tableStorageService.GetCustomerAsync("CUSTOMER", id);
+                    if (existingCustomer == null)
+                    {
+                        return NotFound();
+                    }
+
+                    existingCustomer.CustomerName = customer.CustomerName;
+                    existingCustomer.CustomerEmail = customer.CustomerEmail;
+                    existingCustomer.PhoneNumber = customer.PhoneNumber;
+                    existingCustomer.ShippingAddress = customer.ShippingAddress;
+                    existingCustomer.CustomerPassword = customer.CustomerPassword;
+
+                    await _tableStorageService.UpdateCustomerAsync(existingCustomer);
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (Exception)
+                catch (RequestFailedException ex) when (ex.Status == 412)
                 {
-                    ModelState.AddModelError("", "Concurrency conflict - record was modified by another user.");
+                    ModelState.AddModelError("", "Concurrency conflict - this record was modified by another user. Please refresh and try again.");
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", $"An error occurred while updating the customer: {ex.Message}");
                 }
             }
             return View(customer);
