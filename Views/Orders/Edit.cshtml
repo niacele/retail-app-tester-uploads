@@ -48,7 +48,7 @@
             {
                 <tr>
                     <td>@item.ProductName</td>
-                    <td>@item.UnitPrice.ToString("C")</td>
+                    <td>@item.UnitPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA"))</td>
                     <td>
                         <form asp-action="UpdateQuantity" method="post" class="form-inline">
                             <input type="hidden" name="orderId" value="@Model.RowKey" />
@@ -58,7 +58,7 @@
                             <button type="submit" class="btn btn-sm btn-outline-primary ml-2">Update</button>
                         </form>
                     </td>
-                    <td>@((item.Quantity * item.UnitPrice).ToString("C"))</td>
+                    <td>@((item.Quantity * item.UnitPrice).ToString("C", System.Globalization.CultureInfo.GetCultureInfo("en-ZA")))</td>
                     <td>
                         <form asp-action="RemoveItem" method="post">
                             <input type="hidden" name="orderId" value="@Model.RowKey" />
@@ -120,7 +120,6 @@ else
                         <option value="">Select Payment Method</option>
                         <option value="Credit">Credit</option>
                         <option value="Credit Card">Credit Card</option>
-                        <option value="PayPal">PayPal</option>
                         <option value="EFT">Electronic Transfer</option>
                     </select>
                 </div>
